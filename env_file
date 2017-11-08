@@ -1,0 +1,4 @@
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=url_shortener_db
+APP_SECRET_KEY=super_secret_key
