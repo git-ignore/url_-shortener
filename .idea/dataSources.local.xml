@@ -8,7 +8,7 @@
       <case-sensitivity plain-identifiers="lower" quoted-identifiers="exact" />
       <secret-storage>master_key</secret-storage>
       <user-name>user</user-name>
-      <introspection-schemas>url_shortener_db:</introspection-schemas>
+      <introspection-schemas>url_shortener_db:*</introspection-schemas>
     </data-source>
   </component>
 </project>
