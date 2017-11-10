@@ -3,3 +3,4 @@ flask-restful
 flask_httpauth
 psycopg2
 Peewee
+requests

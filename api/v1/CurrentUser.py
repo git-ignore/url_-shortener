@@ -8,5 +8,9 @@ class CurrentUser(Resource):
 
     @auth.login_required
     def get(self):
-        user_info = User.get(User.login == auth.username())
+        return self.get_user_by_login(auth.username())
+
+    @staticmethod
+    def get_user_by_login(login):
+        user_info = User.get(User.login == login)
         return model_to_dict(user_info)

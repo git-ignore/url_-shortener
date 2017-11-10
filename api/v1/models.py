@@ -18,7 +18,14 @@ class User(BaseModel):
     password = CharField()
 
 
-db.create_tables([User], safe=True)
+class Url(BaseModel):
+    id = PrimaryKeyField()
+    url = CharField()
+    hash = CharField()
+    author_id = IntegerField()
+
+
+db.create_tables([User, Url], safe=True)
 
 
 
