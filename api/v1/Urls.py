@@ -2,8 +2,7 @@ from flask_restful import Resource, reqparse
 from api.v1.models import Url
 from api.v1.Auth import auth
 from api.v1.CurrentUser import CurrentUser
-from api.v1.helpers import select_all
-import hashlib
+from api.v1.helpers import select_all, hash_string
 import requests
 
 
@@ -37,7 +36,7 @@ class Urls(Resource):
 
         if self.is_url_valid(link["url"]):
 
-            url_hash = self.hash_string(link["url"])
+            url_hash = hash_string(link["url"])
             url, created = Url.get_or_create(
                 hash=url_hash,
                 author_id=user["id"],
@@ -48,10 +47,6 @@ class Urls(Resource):
             return created
         else:
             return False
-
-    @staticmethod
-    def hash_string(string):
-        return hashlib.sha1((string+auth.username()).encode("UTF-8")).hexdigest()[:12]
 
     @staticmethod
     def is_url_valid(link):
