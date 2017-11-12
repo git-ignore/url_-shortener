@@ -1,9 +1,11 @@
 import requests
 from flask_restful import Resource, reqparse
+from config import WRONG_RESPONSE_CODES
 
-from api.helpers import select_all, hash_string
-from api.v1.Auth import auth
-from api.v1.CurrentUser import CurrentUser
+
+from api.v1.Resourses.User.CurrentUser import CurrentUser
+from api.v1.auth import auth
+from api.v1.helpers import select_all, hash_string
 from api.v1.models import Url
 
 
@@ -25,7 +27,7 @@ class Urls(Resource):
                 "id": link["id"],
                 "url": link["url"],
                 # TODO: current server adress
-                "shortlink": "http://localhost:8080/api/v1/shorten_urls/" + link["hash"]
+                "shortlink": link["short_url"]
             })
         return user_links
 
@@ -43,7 +45,8 @@ class Urls(Resource):
                 hash=url_hash,
                 author_id=user["id"],
                 defaults={
-                    'url': link["url"]
+                    'url': link["url"],
+                    'short_url': 'http://localhost:8080/api/v1/shorten_urls/' + url_hash
                 }
             )
             return created
@@ -56,9 +59,12 @@ class Urls(Resource):
         # TODO: add http if link doesnt starts with it
         if not link.startswith("http://"):
             link = "http://" + link
-
         try:
             r_status = requests.get(link).status_code
         except requests.exceptions.ConnectionError:
             return False
-        return r_status < 400
+
+        print(r_status)
+        print(WRONG_RESPONSE_CODES)
+        # TODO: иногда существующие сайты отдают 403 и все идет мимо
+        return r_status not in WRONG_RESPONSE_CODES

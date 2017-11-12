@@ -18,13 +18,15 @@ class User(BaseModel):
 class Url(BaseModel):
     id = PrimaryKeyField()
     url = CharField()
+    short_url = CharField()
     hash = CharField()
     author_id = IntegerField()
+    count_of_redirects = IntegerField(default=0)
 
 
 class FollowUrl(BaseModel):
     id = PrimaryKeyField()
-    url_hash = CharField()
+    link_id = IntegerField()
     referrer = CharField()
     datetime = DateTimeField(default=datetime.datetime.now)
 

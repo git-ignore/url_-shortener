@@ -12,3 +12,4 @@ db = connect(
     'postgresql://%s:%s@db:%s/%s' % (DB_USER, DB_PASSWORD, POSTGRE_PORT, DB_NAME)
 )
 
+WRONG_RESPONSE_CODES = [400, 403, 404, 502, 503, 504]

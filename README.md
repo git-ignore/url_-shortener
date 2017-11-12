@@ -18,4 +18,4 @@ python(Flask) + PostgreSQL + ngnix
 =========== curl add new user ===========
 
     curl http://localhost:8080/api/v1/users -i -H "Content-Type: application/json" -X POST -d 
-    '{"login":"your_login","password":"yourqwerty"}
+    '{"login":"your_login","password":"yourqwerty"}'

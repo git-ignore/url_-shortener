@@ -1,8 +1,8 @@
 from flask_restful import Resource
 from playhouse.shortcuts import model_to_dict
 
-from api.v1.Auth import auth
-from api.v1.CurrentUser import CurrentUser
+from api.v1.Resourses.User.CurrentUser import CurrentUser
+from api.v1.auth import auth
 from api.v1.models import Url, FollowUrl
 
 
@@ -16,12 +16,18 @@ class SingleUrl(Resource):
         link = Url.get(Url.id == id, Url.author_id == user["id"])
         return self.handle_raw_link(link)
 
+    @auth.login_required
+    def delete(self, id):
+        user = CurrentUser.get_user_by_login(auth.username())
+        return bool(Url.delete().where(Url.id == id, Url.author_id == user["id"]).execute())
+
     @staticmethod
     def handle_raw_link(r_link):
         r_link = model_to_dict(r_link)
-        return {
-            "id": r_link["id"],
-            "origUrl": r_link["url"],
-            "shortUrl": "http://localhost:8080/api/v1/shorten_urls/" + r_link["hash"],
-            "countOfRedirects":  FollowUrl.select().where(FollowUrl.url_hash == r_link["hash"]).count()
-        }
+        props_to_exclude = ["hash", "author_id"]
+
+        for prop in props_to_exclude:
+            del r_link[prop]
+
+        return r_link
+

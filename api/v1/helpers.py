@@ -1,12 +1,13 @@
 from playhouse.shortcuts import model_to_dict
 import base64
 import hashlib
-from api.v1.Auth import auth
+from api.v1.auth import auth
 
 
 def select_all(model):
     result = []
     for row in model.select().execute():
+        print(model_to_dict(row))
         result.append(model_to_dict(row))
     return result
 
