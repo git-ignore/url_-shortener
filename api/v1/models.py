@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
-
+from config import db
 from peewee import *
-from playhouse.db_url import connect
-
-db = connect(os.environ.get('DATABASE') or 'postgresql://user:password@db:5432/url_shortener_db')
+import datetime
 
 
 class BaseModel(Model):
@@ -25,7 +22,14 @@ class Url(BaseModel):
     author_id = IntegerField()
 
 
-db.create_tables([User, Url], safe=True)
+class FollowUrl(BaseModel):
+    id = PrimaryKeyField()
+    url_hash = CharField()
+    referrer = CharField()
+    datetime = DateTimeField(default=datetime.datetime.now)
+
+
+db.create_tables([User, Url, FollowUrl], safe=True)
 
 
 

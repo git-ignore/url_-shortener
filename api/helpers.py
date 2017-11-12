@@ -1,6 +1,7 @@
 from playhouse.shortcuts import model_to_dict
 import base64
 import hashlib
+from api.v1.Auth import auth
 
 
 def select_all(model):

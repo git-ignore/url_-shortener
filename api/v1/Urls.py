@@ -1,9 +1,10 @@
+import requests
 from flask_restful import Resource, reqparse
-from api.v1.models import Url
+
+from api.helpers import select_all, hash_string
 from api.v1.Auth import auth
 from api.v1.CurrentUser import CurrentUser
-from api.v1.helpers import select_all, hash_string
-import requests
+from api.v1.models import Url
 
 
 class Urls(Resource):
@@ -21,7 +22,9 @@ class Urls(Resource):
 
         for link in raw_links:
             user_links.append({
+                "id": link["id"],
                 "url": link["url"],
+                # TODO: current server adress
                 "shortlink": "http://localhost:8080/api/v1/shorten_urls/" + link["hash"]
             })
         return user_links
@@ -35,7 +38,6 @@ class Urls(Resource):
     def add_url(self, link, user):
 
         if self.is_url_valid(link["url"]):
-
             url_hash = hash_string(link["url"])
             url, created = Url.get_or_create(
                 hash=url_hash,
@@ -50,9 +52,13 @@ class Urls(Resource):
 
     @staticmethod
     def is_url_valid(link):
+
+        # TODO: add http if link doesnt starts with it
         if not link.startswith("http://"):
             link = "http://" + link
 
-        # TODO: exception: remote host doesn't exists!
-        r_status = requests.get(link).status_code
+        try:
+            r_status = requests.get(link).status_code
+        except requests.exceptions.ConnectionError:
+            return False
         return r_status < 400
