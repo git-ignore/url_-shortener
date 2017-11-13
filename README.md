@@ -19,3 +19,7 @@ python(Flask) + PostgreSQL + ngnix
 
     curl http://localhost:8080/api/v1/users -i -H "Content-Type: application/json" -X POST -d 
     '{"login":"your_login","password":"yourqwerty"}'
+
+=========== curl add new url  ===========
+
+    curl http://localhost:8080/api/v1/users/me/shorten_urls -i -H "Content-Type: application/json" -X POST -d '{"url":"http://promedia-perm.ru"}' -u admin:123
