@@ -1,6 +1,7 @@
 import requests
 from flask_restful import Resource, reqparse
 from config import WRONG_RESPONSE_CODES
+from flask import request
 
 
 from api.v1.Resourses.User.CurrentUser import CurrentUser
@@ -26,7 +27,6 @@ class Urls(Resource):
             user_links.append({
                 "id": link["id"],
                 "url": link["url"],
-                # TODO: current server adress
                 "shortlink": link["short_url"]
             })
         return user_links
@@ -38,7 +38,7 @@ class Urls(Resource):
         return self.add_url(link, user), 201
 
     def add_url(self, link, user):
-
+        link["url"] = self.check_http(link["url"])
         if self.is_url_valid(link["url"]):
             url_hash = hash_string(link["url"])
             url, created = Url.get_or_create(
@@ -46,7 +46,7 @@ class Urls(Resource):
                 author_id=user["id"],
                 defaults={
                     'url': link["url"],
-                    'short_url': 'http://localhost:8080/api/v1/shorten_urls/' + url_hash
+                    'short_url': '%sapi/v1/shorten_urls/%s' % (request.host_url, url_hash)
                 }
             )
             return created
@@ -56,9 +56,6 @@ class Urls(Resource):
     @staticmethod
     def is_url_valid(link):
 
-        # TODO: add http if link doesnt starts with it
-        if not link.startswith("http://"):
-            link = "http://" + link
         try:
             r_status = requests.get(link).status_code
         except requests.exceptions.ConnectionError:
@@ -68,3 +65,9 @@ class Urls(Resource):
         print(WRONG_RESPONSE_CODES)
         # TODO: иногда существующие сайты отдают 403 и все идет мимо
         return r_status not in WRONG_RESPONSE_CODES
+
+    @staticmethod
+    def check_http(link):
+        if not link.startswith("http"):
+            link = "http://" + link
+        return link

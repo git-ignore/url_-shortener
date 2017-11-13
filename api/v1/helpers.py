@@ -19,6 +19,5 @@ def b64_encode(string):
 def hash_string(string):
         return hashlib.sha1((string+auth.username()).encode("UTF-8")).hexdigest()[:12]
 
-# def get_user_by_login(login):
-#     user_info = User.get(User.login == auth.username())
-#     return model_to_dict(user_info)
+
+

@@ -1,6 +1,6 @@
 from playhouse.shortcuts import model_to_dict
 from flask_restful import Resource
-from api.v1.models import User
+from api.v1.models import User, Url
 from api.v1.auth import auth
 
 
@@ -12,5 +12,7 @@ class CurrentUser(Resource):
 
     @staticmethod
     def get_user_by_login(login):
-        user_info = User.get(User.login == login)
-        return model_to_dict(user_info)
+        user_info = model_to_dict(User.get(User.login == login))
+        user_info["links_created"] = Url.select().where(Url.author_id == user_info["id"]).count()
+        del user_info["password"]
+        return user_info

@@ -1,5 +1,6 @@
 from flask_restful import Resource, reqparse
 from api.v1.models import User
+from api.v1.auth import hash_password
 
 
 class Registration(Resource):
@@ -19,7 +20,7 @@ class Registration(Resource):
         user, created = User.get_or_create(
             login=new_user["login"],
             defaults={
-                'password': new_user["password"]
+                'password': hash_password(new_user["password"])
             }
         )
         return created
