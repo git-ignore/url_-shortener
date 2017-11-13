@@ -17,7 +17,7 @@ api.add_resource(CurrentUser, '/api/v1/users/me', endpoint='CurrentUser')
 
 # Urls resource
 api.add_resource(Urls, '/api/v1/users/me/shorten_urls', endpoint='Urls')
-api.add_resource(SingleUrl, '/api/v1/users/me/shorten_urls/<int:id>', endpoint='SingleUrl')
+api.add_resource(SingleUrl, '/api/v1/users/me/shorten_urls/<int:url_id>', endpoint='SingleUrl')
 api.add_resource(Redirect, '/api/v1/shorten_urls/<string:hash>', endpoint='Redirect')
 
 # Reports resource

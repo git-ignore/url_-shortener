@@ -20,7 +20,7 @@ class ReferrersReport(Resource):
                 else:
                     referrer_stat[referrer] += 1
 
-        # Sort and make an easy-readable view of stat
+        # Sort and make an easy-readable view of statistics
         sorted_keys = sorted(referrer_stat.items(), key=lambda x: x[1], reverse=True)
         referrer_stat = []
         for v in sorted_keys:

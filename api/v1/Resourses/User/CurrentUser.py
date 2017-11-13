@@ -12,7 +12,14 @@ class CurrentUser(Resource):
 
     @staticmethod
     def get_user_by_login(login):
-        user_info = model_to_dict(User.get(User.login == login))
-        user_info["links_created"] = Url.select().where(Url.author_id == user_info["id"]).count()
-        del user_info["password"]
-        return user_info
+        try:
+            user_info = model_to_dict(User.get(User.login == login))
+        except User.DoesNotExist:
+            user_info = None
+
+        if user_info:
+            user_info["links_created"] = Url.select().where(Url.author_id == user_info["id"]).count()
+            del user_info["password"]
+            return user_info
+        else:
+            return False

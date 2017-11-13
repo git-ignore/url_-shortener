@@ -1,6 +1,7 @@
 from flask_restful import Resource, reqparse
 from api.v1.models import User
 from api.v1.auth import hash_password
+from api.v1.helpers import error_message, success_message
 
 
 class Registration(Resource):
@@ -13,7 +14,10 @@ class Registration(Resource):
 
     def post(self):
         new_user = self.reqparse.parse_args()
-        return self.add_new_user(new_user), 201
+        if self.add_new_user(new_user):
+            return success_message("User successfully registered", 201, False)
+        else:
+            return error_message("User with this login already exists", 400)
 
     @staticmethod
     def add_new_user(new_user):
@@ -24,4 +28,3 @@ class Registration(Resource):
             }
         )
         return created
-    # TODO: Если таблицы не существует!

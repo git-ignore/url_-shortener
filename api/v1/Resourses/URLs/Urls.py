@@ -2,12 +2,12 @@ import requests
 from flask_restful import Resource, reqparse
 from config import WRONG_RESPONSE_CODES
 from flask import request
-
-
 from api.v1.Resourses.User.CurrentUser import CurrentUser
 from api.v1.auth import auth
 from api.v1.helpers import select_all, hash_string
 from api.v1.models import Url
+from api.v1.helpers import success_message, error_message
+from playhouse.shortcuts import model_to_dict
 
 
 class Urls(Resource):
@@ -29,13 +29,17 @@ class Urls(Resource):
                 "url": link["url"],
                 "shortlink": link["short_url"]
             })
-        return user_links
+
+        if user_links:
+            return success_message("Success", 200, user_links)
+        else:
+            return error_message("The user does not have any links created", 400)
 
     @auth.login_required
     def post(self):
         link = self.reqparse.parse_args()
         user = CurrentUser.get_user_by_login(auth.username())
-        return self.add_url(link, user), 201
+        return self.add_url(link, user)
 
     def add_url(self, link, user):
         link["url"] = self.check_http(link["url"])
@@ -49,20 +53,20 @@ class Urls(Resource):
                     'short_url': '%sapi/v1/shorten_urls/%s' % (request.host_url, url_hash)
                 }
             )
-            return created
+            if created:
+                return success_message("Link was successfully added", 201, self.get_created_link(url))
+            else:
+                return error_message("This link already exists", 400)
         else:
-            return False
+            return error_message("Not valid link", 400)
 
     @staticmethod
     def is_url_valid(link):
-
         try:
             r_status = requests.get(link).status_code
         except requests.exceptions.ConnectionError:
             return False
 
-        print(r_status)
-        print(WRONG_RESPONSE_CODES)
         # TODO: иногда существующие сайты отдают 403 и все идет мимо
         return r_status not in WRONG_RESPONSE_CODES
 
@@ -71,3 +75,12 @@ class Urls(Resource):
         if not link.startswith("http"):
             link = "http://" + link
         return link
+
+    @staticmethod
+    def get_created_link(raw_url):
+        url = model_to_dict(raw_url)
+        return {
+            "id": url["id"],
+            "url": url["url"],
+            "short_url": url["short_url"]
+        }

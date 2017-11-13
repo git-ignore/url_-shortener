@@ -15,7 +15,7 @@ def get_password(login):
     try:
         user = User.get(User.login == login)
         return user.password
-    except():
+    except User.DoesNotExist:
         return None
 
 

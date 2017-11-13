@@ -1,7 +1,9 @@
 from flask_restful import Resource, reqparse
 from playhouse.shortcuts import model_to_dict
 from api.v1.auth import auth
-from api.v1.models import FollowUrl
+from api.v1.models import FollowUrl, Url
+from api.v1.Resourses.User.CurrentUser import CurrentUser
+from api.v1.helpers import error_message, success_message
 from datetime import datetime, timedelta
 
 
@@ -15,8 +17,33 @@ class RedirectsReport(Resource):
     @auth.login_required
     def get(self, link_id, group_by):
         args = self.reqparse.parse_args()
-        from_date = datetime.strptime(args["from_date"], "%Y-%m-%d")
-        to_date = datetime.strptime(args["to_date"], "%Y-%m-%d") + timedelta(days=1) - timedelta(minutes=1)
+        user_id = CurrentUser.get_user_by_login(auth.username())["id"]
+
+        try:
+            from_date = datetime.strptime(args["from_date"], "%Y-%m-%d")
+            to_date = datetime.strptime(args["to_date"], "%Y-%m-%d") + timedelta(days=1) - timedelta(minutes=1)
+        except ValueError:
+            return error_message("Wrong date format", 400)
+
+        if from_date > to_date:
+            return error_message("The 'from_date' cant be greater than 'to_date'", 400)
+
+        if not self.validate_group_by(group_by):
+            return error_message("Wrong 'grop_by' attribute", 400)
+
+        try:
+            Url.get(Url.author_id == user_id, Url.id == link_id)
+        except Url.DoesNotExist:
+            return error_message("User hasn't link with provided id", 400)
+
+        redirects = self.list_redirects(from_date, to_date, link_id)
+        dates = self.list_dates(from_date, to_date, group_by)
+        report = self.build_report(dates, redirects, group_by)
+
+        return success_message("Report successfully created", 200, report)
+
+    @staticmethod
+    def list_redirects(from_date, to_date, link_id):
         raw_redirects = FollowUrl.select().where(
             (FollowUrl.datetime >= from_date) &
             (FollowUrl.datetime <= to_date) &
@@ -26,13 +53,9 @@ class RedirectsReport(Resource):
         redirects = []
         for raw_redirect in raw_redirects:
             redirects.append(model_to_dict(raw_redirect))
-
-        dates = self.get_dates_array(from_date, to_date, group_by)
-        report = self.group_redirects(dates, redirects, group_by)
-
-        return report
-
-    def get_dates_array(self, from_date, to_date, group_by):
+        return redirects   
+            
+    def list_dates(self, from_date, to_date, group_by):
         dates = [from_date]
         added_date = from_date
         while added_date < to_date:
@@ -40,12 +63,12 @@ class RedirectsReport(Resource):
             dates.append(added_date)
         return dates
 
-    def group_redirects(self, dates, redirects, group_by):
+    def build_report(self, dates, redirects, group_by):
 
-        # set report points according to group_by attribute
+        # set report "date-points" according to group_by attribute
         report = dict.fromkeys(map(self.time_to_string, dates), 0)
 
-        # counting redirects and group for each point in report
+        # counting redirects and group it for each point in report
         for redirect in redirects:
             for i, date in enumerate(dates):
                 if i < len(dates) - 1 and date < redirect["datetime"] < (self.add_timedelta(date, group_by)):
@@ -69,4 +92,8 @@ class RedirectsReport(Resource):
     @staticmethod
     def time_to_string(time):
         return time.strftime('%d.%m.%Y %H:%M')
+
+    @staticmethod
+    def validate_group_by(group_by):
+        return group_by in ["days", "hours", "minutes"]
 
