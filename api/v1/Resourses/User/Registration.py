@@ -1,7 +1,9 @@
 from flask_restful import Resource, reqparse
 from api.v1.models import User
 from api.v1.auth import hash_password
-from api.v1.helpers import error_message, success_message
+from api.v1.helpers import api_response_error, api_response_success
+from config import MSG_LOGIN_EXISTS, MSG_USER_REGISTERED, MSG_WRONG_LOGIN
+import re
 
 
 class Registration(Resource):
@@ -14,10 +16,12 @@ class Registration(Resource):
 
     def post(self):
         new_user = self.reqparse.parse_args()
+        if not re.match("^[A-Za-z0-9_-]*$", new_user["login"]):
+            return api_response_error(MSG_WRONG_LOGIN, 400)
         if self.add_new_user(new_user):
-            return success_message("User successfully registered", 201, False)
+            return api_response_success(MSG_USER_REGISTERED, 201)
         else:
-            return error_message("User with this login already exists", 400)
+            return api_response_error(MSG_LOGIN_EXISTS, 400)
 
     @staticmethod
     def add_new_user(new_user):

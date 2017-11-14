@@ -1,7 +1,9 @@
 from flask_restful import Resource
 from playhouse.shortcuts import model_to_dict
 from api.v1.auth import auth
-from api.v1.models import Url, FollowUrl
+from api.v1.models import FollowUrl
+from api.v1.helpers import api_response_success, api_response_error
+from config import INCLUDE_NONE_REFERRER_IN_REF_REPORT
 
 
 class ReferrersReport(Resource):
@@ -14,11 +16,14 @@ class ReferrersReport(Resource):
         # Counting of redirects from each referrer
         for row in redirects:
             referrer = model_to_dict(row)["referrer"]
-            if referrer != "None":
-                if referrer not in referrer_stat:
-                    referrer_stat[referrer] = 1
-                else:
-                    referrer_stat[referrer] += 1
+
+            if referrer == "None" and not INCLUDE_NONE_REFERRER_IN_REF_REPORT:
+                continue
+
+            if referrer not in referrer_stat:
+                referrer_stat[referrer] = 1
+            else:
+                referrer_stat[referrer] += 1
 
         # Sort and make an easy-readable view of statistics
         sorted_keys = sorted(referrer_stat.items(), key=lambda x: x[1], reverse=True)
@@ -29,5 +34,8 @@ class ReferrersReport(Resource):
                 "count_of_redirects": v[1]
             })
 
+        if not referrer_stat:
+            return api_response_error("Requested link has no redirects", 400)
+
         # return first 20 items (Top-20)
-        return referrer_stat[:20]
+        return api_response_success(referrer_stat[:20], 200)

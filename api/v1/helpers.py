@@ -19,21 +19,24 @@ def hash_string(string):
         return hashlib.sha1((string+auth.username()).encode("UTF-8")).hexdigest()[:12]
 
 
-def error_message(error_text, status_code):
+def api_response_error(error_text, status_code):
     return {
         "error": error_text
     }, status_code
 
 
-# TODO: Рефакторить саксес месэдж
-def success_message(message, status_code, add_info):
-    if not add_info:
+def api_response_success(data, status_code):
+    if type(data) in [dict, list]:
         return {
-            "message": message
+            "data": data
+        }, status_code
+    elif type(data) in [str, int]:
+        return {
+            "message": data
         }, status_code
     else:
-        return {
-            "message": message,
-            "data": add_info
-        }, status_code
+        api_response_error("Internal server error", 500)
 
+
+def time_to_string(time):
+        return time.strftime('%d.%m.%Y %H:%M')

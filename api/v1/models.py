@@ -22,6 +22,7 @@ class Url(BaseModel):
     hash = CharField()
     author_id = IntegerField()
     count_of_redirects = IntegerField(default=0)
+    created = DateTimeField(default=datetime.datetime.now)
 
 
 class FollowUrl(BaseModel):

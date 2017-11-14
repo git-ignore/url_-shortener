@@ -6,7 +6,7 @@ from api.v1.Resourses.User.CurrentUser import CurrentUser
 from api.v1.auth import auth
 from api.v1.helpers import select_all, hash_string
 from api.v1.models import Url
-from api.v1.helpers import success_message, error_message
+from api.v1.helpers import api_response_success, api_response_error
 from playhouse.shortcuts import model_to_dict
 
 
@@ -27,13 +27,13 @@ class Urls(Resource):
             user_links.append({
                 "id": link["id"],
                 "url": link["url"],
-                "shortlink": link["short_url"]
+                "shortLink": link["short_url"]
             })
 
         if user_links:
-            return success_message("Success", 200, user_links)
+            return api_response_success(user_links, 200)
         else:
-            return error_message("The user does not have any links created", 400)
+            return api_response_error("The user does not have any links created", 404)
 
     @auth.login_required
     def post(self):
@@ -54,20 +54,21 @@ class Urls(Resource):
                 }
             )
             if created:
-                return success_message("Link was successfully added", 201, self.get_created_link(url))
+                return api_response_success(self.get_created_link(url), 201)
             else:
-                return error_message("This link already exists", 400)
+                return api_response_error("This link already exists", 400)
         else:
-            return error_message("Not valid link", 400)
+            return api_response_error("The link is not valid", 400)
 
     @staticmethod
     def is_url_valid(link):
         try:
             r_status = requests.get(link).status_code
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.MissingSchema,
+                requests.exceptions.InvalidURL):
             return False
 
-        # TODO: иногда существующие сайты отдают 403 и все идет мимо
         return r_status not in WRONG_RESPONSE_CODES
 
     @staticmethod

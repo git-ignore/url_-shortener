@@ -3,7 +3,7 @@ from playhouse.shortcuts import model_to_dict
 from api.v1.auth import auth
 from api.v1.models import FollowUrl, Url
 from api.v1.Resourses.User.CurrentUser import CurrentUser
-from api.v1.helpers import error_message, success_message
+from api.v1.helpers import api_response_error, api_response_success, time_to_string
 from datetime import datetime, timedelta
 
 
@@ -19,28 +19,40 @@ class RedirectsReport(Resource):
         args = self.reqparse.parse_args()
         user_id = CurrentUser.get_user_by_login(auth.username())["id"]
 
+        # params validation
         try:
             from_date = datetime.strptime(args["from_date"], "%Y-%m-%d")
-            to_date = datetime.strptime(args["to_date"], "%Y-%m-%d") + timedelta(days=1) - timedelta(minutes=1)
+            to_date = datetime.strptime(args["to_date"], "%Y-%m-%d")
+            if to_date == from_date:
+                to_date += + timedelta(hours=23)
+            else:
+                to_date += + timedelta(days=1)
         except ValueError:
-            return error_message("Wrong date format", 400)
+            return api_response_error("Wrong date format", 400)
 
-        if from_date > to_date:
-            return error_message("The 'from_date' cant be greater than 'to_date'", 400)
+        if from_date > (to_date - timedelta(hours=23)):
+            return api_response_error("The 'from_date' cant be greater than 'to_date'", 400)
+
+        if to_date > (datetime.now() + timedelta(hours=23)):
+            return api_response_error("The 'to_date' cant be greater than today's datetime", 400)
 
         if not self.validate_group_by(group_by):
-            return error_message("Wrong 'grop_by' attribute", 400)
+            return api_response_error("Wrong 'grop_by' attribute", 400)
 
         try:
-            Url.get(Url.author_id == user_id, Url.id == link_id)
+            url_created = Url.get(Url.author_id == user_id, Url.id == link_id).created
         except Url.DoesNotExist:
-            return error_message("User hasn't link with provided id", 400)
+            return api_response_error("User hasn't link with provided id", 404)
 
+        if (from_date + timedelta(hours=23)) < url_created:
+            return api_response_error("'from_date' attribute cant be earlier than link was created", 400)
+
+        # building report
         redirects = self.list_redirects(from_date, to_date, link_id)
         dates = self.list_dates(from_date, to_date, group_by)
         report = self.build_report(dates, redirects, group_by)
 
-        return success_message("Report successfully created", 200, report)
+        return api_response_success(report, 200)
 
     @staticmethod
     def list_redirects(from_date, to_date, link_id):
@@ -56,23 +68,28 @@ class RedirectsReport(Resource):
         return redirects   
             
     def list_dates(self, from_date, to_date, group_by):
-        dates = [from_date]
+        dates = []
         added_date = from_date
-        while added_date < to_date:
-            added_date = self.add_timedelta(added_date, group_by)
+        # while added_date < to_date:
+        #     added_date = self.add_timedelta(added_date, group_by)
+        #     dates.append(added_date)
+        while True:
             dates.append(added_date)
+            added_date = self.add_timedelta(added_date, group_by)
+            if added_date >= to_date:
+                break
         return dates
 
     def build_report(self, dates, redirects, group_by):
 
         # set report "date-points" according to group_by attribute
-        report = dict.fromkeys(map(self.time_to_string, dates), 0)
+        report = dict.fromkeys(map(time_to_string, dates), 0)
 
         # counting redirects and group it for each point in report
         for redirect in redirects:
             for i, date in enumerate(dates):
-                if i < len(dates) - 1 and date < redirect["datetime"] < (self.add_timedelta(date, group_by)):
-                    str_date = self.time_to_string(date)
+                if i < len(dates) and date < redirect["datetime"] < (self.add_timedelta(date, group_by)):
+                    str_date = time_to_string(date)
                     report[str_date] += 1
 
         return report
@@ -90,10 +107,5 @@ class RedirectsReport(Resource):
         return date
 
     @staticmethod
-    def time_to_string(time):
-        return time.strftime('%d.%m.%Y %H:%M')
-
-    @staticmethod
     def validate_group_by(group_by):
         return group_by in ["days", "hours", "minutes"]
-
