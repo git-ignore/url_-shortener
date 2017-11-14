@@ -2,7 +2,7 @@ from flask_restful import Resource, reqparse
 from api.v1.models import User
 from api.v1.auth import hash_password
 from api.v1.helpers import api_response_error, api_response_success
-from config import MSG_LOGIN_EXISTS, MSG_USER_REGISTERED, MSG_WRONG_LOGIN
+from api.v1.messages import MSG_LOGIN_EXISTS, MSG_USER_REGISTERED, MSG_WRONG_LOGIN, MSG_NO_LIGON_PROVIDED, MSG_NO_PSW_PROVIDED
 import re
 
 
@@ -10,8 +10,8 @@ class Registration(Resource):
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('login', type=str, required=True, help='No login provided', location='json')
-        self.reqparse.add_argument('password', type=str, required=True, help='No password provided', location='json')
+        self.reqparse.add_argument('login', type=str, required=True, help=MSG_NO_LIGON_PROVIDED, location='json')
+        self.reqparse.add_argument('password', type=str, required=True, help=MSG_NO_PSW_PROVIDED, location='json')
         super(Registration, self).__init__()
 
     def post(self):

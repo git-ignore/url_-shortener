@@ -9,7 +9,9 @@ from flask_restful import Api
 from flask import Flask
 
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 api = Api(app)
+
 
 # User resource
 api.add_resource(Registration, '/api/v1/users', endpoint='Registration')

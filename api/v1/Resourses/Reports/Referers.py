@@ -4,6 +4,7 @@ from api.v1.auth import auth
 from api.v1.models import FollowUrl
 from api.v1.helpers import api_response_success, api_response_error
 from config import INCLUDE_NONE_REFERRER_IN_REF_REPORT
+from api.v1.messages import MSG_LINK_HAS_NO_REDIRECTS
 
 
 class ReferrersReport(Resource):
@@ -35,7 +36,7 @@ class ReferrersReport(Resource):
             })
 
         if not referrer_stat:
-            return api_response_error("Requested link has no redirects", 400)
+            return api_response_error(MSG_LINK_HAS_NO_REDIRECTS, 400)
 
         # return first 20 items (Top-20)
         return api_response_success(referrer_stat[:20], 200)

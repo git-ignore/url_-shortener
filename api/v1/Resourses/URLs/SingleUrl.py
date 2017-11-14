@@ -5,6 +5,7 @@ from api.v1.Resourses.User.CurrentUser import CurrentUser
 from api.v1.auth import auth
 from api.v1.models import Url
 from api.v1.helpers import time_to_string
+from api.v1.messages import MSG_USER_HAS_NO_THIS_LINK, MSG_LINK_DELETED
 
 
 class SingleUrl(Resource):
@@ -17,7 +18,7 @@ class SingleUrl(Resource):
             link = Url.get(Url.id == url_id, Url.author_id == user["id"])
             return api_response_success(self.handle_raw_link(link), 200)
         except Url.DoesNotExist:
-            return api_response_error("User hasn't link with provided id", 404)
+            return api_response_error(MSG_USER_HAS_NO_THIS_LINK, 404)
 
     @auth.login_required
     def delete(self, url_id):
@@ -25,9 +26,9 @@ class SingleUrl(Resource):
         deleted = bool(Url.delete().where(Url.id == url_id, Url.author_id == user["id"]).execute())
 
         if deleted:
-            return api_response_success("Link was successfully deleted", 204)
+            return api_response_success(MSG_LINK_DELETED, 204)
         else:
-            return api_response_error("User hasn't link with provided id", 404)
+            return api_response_error(MSG_USER_HAS_NO_THIS_LINK, 404)
 
     @staticmethod
     def handle_raw_link(r_link):

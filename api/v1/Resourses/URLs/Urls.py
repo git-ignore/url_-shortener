@@ -8,19 +8,20 @@ from api.v1.helpers import select_all, hash_string
 from api.v1.models import Url
 from api.v1.helpers import api_response_success, api_response_error
 from playhouse.shortcuts import model_to_dict
+from api.v1.messages import MSG_LINK_ALREADY_EXISTS, MSG_NO_LINK_PROVIDED, MSG_NOT_VALID_LINK, MSG_NO_USERS_LINKS
 
 
 class Urls(Resource):
 
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('url', type=str, required=True, help='No link provided', location='json')
+        self.reqparse.add_argument('url', type=str, required=True, help=MSG_NO_LINK_PROVIDED, location='json')
         super(Urls, self).__init__()
 
     @auth.login_required
     def get(self):
         user = CurrentUser.get_user_by_login(auth.username())
-        raw_links = select_all(Url.select(Url.url, Url.hash).where(Url.author_id == user["id"]))
+        raw_links = select_all(Url.select(Url.url, Url.hash).where(Url.author_id == user["id"]).order_by(Url.id))
         user_links = []
 
         for link in raw_links:
@@ -33,7 +34,7 @@ class Urls(Resource):
         if user_links:
             return api_response_success(user_links, 200)
         else:
-            return api_response_error("The user does not have any links created", 404)
+            return api_response_error(MSG_NO_USERS_LINKS, 404)
 
     @auth.login_required
     def post(self):
@@ -56,9 +57,9 @@ class Urls(Resource):
             if created:
                 return api_response_success(self.get_created_link(url), 201)
             else:
-                return api_response_error("This link already exists", 400)
+                return api_response_error(MSG_LINK_ALREADY_EXISTS, 400)
         else:
-            return api_response_error("The link is not valid", 400)
+            return api_response_error(MSG_NOT_VALID_LINK, 400)
 
     @staticmethod
     def is_url_valid(link):
