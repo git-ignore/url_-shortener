@@ -7,6 +7,7 @@ from api.v1.helpers import api_response_error, api_response_success, time_to_str
 from datetime import datetime, timedelta
 from api.v1.messages import *
 
+
 class RedirectsReport(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()

@@ -54,7 +54,7 @@ RESTful API для сокращателя ссылок
 
 #### /api/v1/users/me/shorten_urls
 **Ресурс**, предоставляющий работу с короткими ссылками пользователя
-- POST /api/v1/users/me/shorten_urls - создание новой короткой ссылки
+- POST /api/v1/users/me/shorten_urls - создание новой короткой ссылки. Возвращает созданную ссылку.
     
     Пример ответа сервера, при успешном выполнении запроса:
         
@@ -90,7 +90,7 @@ RESTful API для сокращателя ссылок
             ]
         }
 
-- GET /api/v1/users/me/shorten_urls/{id} - получение информации о конкретной короткой ссылке пользователя
+- GET /api/v1/users/me/shorten_urls/{id} - получение полной информации о конкретной короткой ссылке пользователя
 
     Пример ответа сервера при успешном выполнении запроса:
 
@@ -109,12 +109,12 @@ RESTful API для сокращателя ссылок
     Пример ответа сервера при успешном выполнении запроса:
     
         {
-            "message": "Link was successfully deleted""
+            "message": "Link was successfully deleted"
         }
 
 **Отчеты**
 
-- GET /api/v1/users/me/shorten_urls/{id}/[days,hours,min]?from_date=0000-00-00&to_date=0000-00-00 - получение временного графика количества переходов с группировкой по дням, часам, минутам.
+- GET /api/v1/users/me/shorten_urls/{id}/[days,hours,min]?from_date=yyyy-mm-dd&to_date=yyyy-mm-dd - получение временного графика количества переходов с группировкой по дням, часам, минутам.
 
     Полученный ответ представляет собой массив точек с координатами {*x*:*y*}, где *x* - время, *y* - количество переходов
     
@@ -153,9 +153,10 @@ RESTful API для сокращателя ссылок
     *-источник перехода (HTTP referrer) - один из заголовков HTTP запроса, который содержит информацию о сайте, с которого пользователь перешел по ссылке.
 В некоторых случаях не может быть определен, и сокращатель ссылок записывает в базу переход со значением поля *referrer* = None.
 
-    
+    Переходы  с источником "None" можно исключить из отчета, присвоив переменной **INCLUDE_NONE_REFERRER_IN_REF_REPORT** в config.py значение **False**
+  
     Пример ответа сервера при успешном выполнении запроса: 
-    
+  
         {
             "data": [
                 {
@@ -174,23 +175,35 @@ RESTful API для сокращателя ссылок
 Ресурс, предоставляющий работу с короткими ссылками (авторизация не требуется)
 GET /api/v1/shorten_urls/{hash} - переход по ссылке (302 rediret)
 
+Ошибки при запросах к API
+------
+Обо всех ошибках, возникающих во время обработки запроса, сервис сообщает в свойстве "error" JSON-объекта, с соответствующим HTTP-статусом.
 
+Пример ответа сервиса при ошибочном запросе:
 
-## some notes while developing:
+        {
+            "error": "The link is not valid"
+        }
+Сообщения об ошибках можно изменить в `/api/v1/messages.py`
 
-=========== Header basic auth ===========
+Примеры работы с сервисом, при помощи curl
+-----
+- Авторизация пользователя, используя заголовок "Authorization":
 
-    token_str = base64encoded "login:password"
-    curl -H "Authorization: token_str"
+   добавить к запросу `-H "Authorization: token_str"`, где *token_str* - закодированная в base64 строка "user:password"
+   
+- Авторизация пользователя, используя ключ `-u`:
 
-======= User:passwd basic auth ==========
+    Добавить к запросу `-u user:password`
+    
+- Добаить нового пользователя:
 
-    curl http://localhost:8080/api/v1/users -i -u admin:qwerty
+         curl http://localhost:8080/api/v1/users -i -H "Content-Type: application/json" -X POST -d '{"login":"your_login","password":"your_password"}'
         
-=========== curl add new user ===========
+- Добавить новую короткую ссылку:
 
-    curl http://localhost:8080/api/v1/users -i -H "Content-Type: application/json" -X POST -d '{"login":"your_login","password":"yourqwerty"}'
+        curl http://localhost:8080/api/v1/users/me/shorten_urls -i -H "Content-Type: application/json" -X POST -d '{"url":"http://google.com"}' -u user:password
+    
+- Получить отчет о переходах по ссылке с id = 4, с группировкой по часам за 14.11.2017
 
-=========== curl add new url  ===========
-
-    curl http://localhost:8080/api/v1/users/me/shorten_urls -i -H "Content-Type: application/json" -X POST -d '{"url":"http://promedia-perm.ru"}' -u admin:123
+        curl http://localhost:8080/api/v1/users/me/shorten_urls/1/hours?from_date=2017-11-14&to_date=2017-11-14 -i -u your_login:your_password    
